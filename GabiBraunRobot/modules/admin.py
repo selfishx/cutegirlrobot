@@ -214,7 +214,7 @@ def set_title(update: Update, context: CallbackContext):
             "This person CREATED the chat, how can i set custom title for him?")
         return
 
-    if not user_member.status == 'administrator':
+    if user_member.status != 'administrator':
         message.reply_text(
             "Can't set title for non-admins!\nPromote them first to set custom title!"
         )
@@ -325,7 +325,7 @@ def invite(update: Update, context: CallbackContext):
 
     if chat.username:
         update.effective_message.reply_text(f"https://t.me/{chat.username}")
-    elif chat.type == chat.SUPERGROUP or chat.type == chat.CHANNEL:
+    elif chat.type in [chat.SUPERGROUP, chat.CHANNEL]:
         bot_member = chat.get_member(bot.id)
         if bot_member.can_invite_users:
             invitelink = bot.exportChatInviteLink(chat.id)
@@ -365,8 +365,7 @@ def adminlist(update, context):
             'Fetching group admins...', quote=False, parse_mode=ParseMode.HTML)
 
     administrators = bot.getChatAdministrators(chat_id)
-    text = "Admins in <b>{}</b>:".format(
-        html.escape(update.effective_chat.title))
+    text = f"Admins in <b>{html.escape(update.effective_chat.title)}</b>:"
 
     bot_admin_list = []
 
@@ -381,8 +380,12 @@ def adminlist(update, context):
             name = "{}".format(
                 mention_html(
                     user.id,
-                    html.escape(user.first_name + " " +
-                                (user.last_name or ""))))
+                    html.escape(
+                        (f'{user.first_name} ' + ((user.last_name or "")))
+                    ),
+                )
+            )
+
 
         if user.is_bot:
             bot_admin_list.append(name)
@@ -414,16 +417,18 @@ def adminlist(update, context):
             name = "{}".format(
                 mention_html(
                     user.id,
-                    html.escape(user.first_name + " " +
-                                (user.last_name or ""))))
-        #if user.username:
-        #    name = escape_markdown("@" + user.username)
+                    html.escape(
+                        (f'{user.first_name} ' + ((user.last_name or "")))
+                    ),
+                )
+            )
+
         if status == "administrator":
             if custom_title:
                 try:
                     custom_admin_list[custom_title].append(name)
                 except KeyError:
-                    custom_admin_list.update({custom_title: [name]})
+                    custom_admin_list[custom_title] = [name]
             else:
                 normal_admin_list.append(name)
 
@@ -437,9 +442,9 @@ def adminlist(update, context):
             custom_admin_list.pop(admin_group)
 
     text += "\n"
-    for admin_group in custom_admin_list:
+    for admin_group, value in custom_admin_list.items():
         text += "\n🚨 <code>{}</code>".format(admin_group)
-        for admin in custom_admin_list[admin_group]:
+        for admin in value:
             text += "\n<code> • </code>{}".format(admin)
         text += "\n"
 
